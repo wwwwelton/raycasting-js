@@ -21,6 +21,18 @@ class Map {
 			[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 		];
 	}
+	hasWallAt(x, y) {
+		// protection don't go outside the map
+		if (x < 0 || x > WINDOW_WIDTH ||
+			y < 0 || y > WINDOW_HEIGHT) {
+			return true;
+		}
+
+		// Math.floor round the number to int
+		var mapGridIndexX = Math.floor(x / TILE_SIZE);
+		var mapGridIndexY = Math.floor(y / TILE_SIZE);
+		return this.grid[mapGridIndexY][mapGridIndexX];
+	}
 	render() {
 		for (var i = 0; i < MAP_NUM_ROWS; i++) {
 			for (var j = 0; j < MAP_NUM_COLS; j++) {
@@ -55,8 +67,17 @@ class Player {
 		// move more or minus pixels based on moveSpeed
 		// move to front or back base on walkDirection, adding or subtracting
 		var moveStep = this.walkDirection * this.moveSpeed;
-		this.x += Math.cos(this.rotationAngle) * moveStep;
-		this.y += Math.sin(this.rotationAngle) * moveStep;
+
+		// newPlayerX and newPlayerY are the coordinates the player will go to
+		// if there is no wall at that map position
+		var newPlayerX = this.x + Math.cos(this.rotationAngle) * moveStep;
+		var newPlayerY = this.y + Math.sin(this.rotationAngle) * moveStep;
+
+		// only set new player position if it is not colliding with the map walls
+		if (!grid.hasWallAt(newPlayerX, newPlayerY)) {
+			this.x = newPlayerX;
+			this.y = newPlayerY;
+		}
 	}
 	render () {
 		// noStroke();
