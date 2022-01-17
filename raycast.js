@@ -8,7 +8,7 @@ const WINDOW_HEIGHT = MAP_NUM_ROWS * TILE_SIZE;
 const FOV_ANGLE = 60 * (Math.PI / 180);
 
 // thick of each column, example 4 pixels per 1 width pixel
-const WALL_STRIP_WIDTH = 30;
+const WALL_STRIP_WIDTH = 1;
 // the numbers of rays decrease based on WALL_STRIP_WIDTH
 const NUM_RAYS = WINDOW_WIDTH / WALL_STRIP_WIDTH;
 
@@ -106,6 +106,7 @@ class Ray {
 		this.wallHitX = 0;
 		this.wallHitY = 0;
 		this.distance = 0;
+		this.wasHitVertical = false;
 
 		this.isRayFacingDown = this.rayAngle > 0 && this.rayAngle < Math.PI;
 		this.isRayFacingUp = !this.isRayFacingDown;
@@ -207,14 +208,28 @@ class Ray {
 			}
 		}
 
+		// Calculate both horizontal and vertical distances and chose
+		// the smallest value
+		var horzHitDistance = (foundHorzWallHit)
+		? distanceBetweenPoints(player.x, player.y, horzWallHitX, horzWallHitY)
+		: Number.MAX_VALUE;
+		var vertHitDistance = (foundVertWallHit)
+		? distanceBetweenPoints(player.x, player.y, vertWallHitX, vertWallHitY)
+		: Number.MAX_VALUE;
+
+		// only stores the smallest of the distances
+		this.wallHitX = (horzHitDistance < vertHitDistance) ? horzWallHitX : vertWallHitX;
+		this.wallHitY = (horzHitDistance < vertHitDistance) ? horzWallHitY : vertWallHitY;
+		this.distance = (horzHitDistance < vertHitDistance) ? horzHitDistance : vertHitDistance;
+		this.wasHitVertical = (vertHitDistance < horzHitDistance);
 	}
 	render() {
 		stroke("rgba(255, 0, 0, 0.3)");
 		line(
 			player.x,
 			player.y,
-			player.x + Math.cos(this.rayAngle) * 30,
-			player.y + Math.sin(this.rayAngle) * 30
+			this.wallHitX,
+			this.wallHitY,
 		);
 	}
 }
@@ -263,8 +278,7 @@ function castAllRays() {
 	rays = [];
 
 	// loop all columns casting the rays
-	// for (var i = 0; i < NUM_RAYS; i++) {
-	for (var i = 0; i < 1; i++) {
+	for (var i = 0; i < NUM_RAYS; i++) {
 		var ray = new Ray(rayAngle);
 		ray.cast(columnId);
 		rays.push(ray);
@@ -296,6 +310,7 @@ function setup() {
 
 function update() {
 	player.update();
+	castAllRays();
 }
 
 function draw() {
@@ -306,5 +321,4 @@ function draw() {
 		ray.render();
 	}
 	player.render();
-	castAllRays();
 }
