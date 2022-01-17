@@ -121,8 +121,8 @@ class Ray {
 		// HORIZONTAL RAY-GRID INTERSECTION CODE //
 		//////////////////////////////////////////
 		var foundHorzWallHit = false;
-		var wallHitX = 0;
-		var wallHitY = 0;
+		var horzWallHitX = 0;
+		var horzWallHitY = 0;
 
 		// Find the y-coordinate of the closest horizontal grid intersection
 		yintercept = Math.floor(player.y / TILE_SIZE) * TILE_SIZE;
@@ -147,17 +147,63 @@ class Ray {
 
 		// Increment xtep and ystep until we find a wall
 		while (nextHorzTouchX >= 0 && nextHorzTouchX <= WINDOW_WIDTH
-			&& nextHorzTouchY >= 0 && nextHorzTouchY <= WINDOW_HEIGHT) {
+			&& nextHorzTouchY >= 0 && nextHorzTouchY <= WINDOW_HEIGHT)
+		{
 			if (grid.hasWallAt(nextHorzTouchX, nextHorzTouchY)) {
 				foundHorzWallHit = true;
-				wallHitX = nextHorzTouchX;
-				wallHitY = nextHorzTouchY;
+				horzWallHitX = nextHorzTouchX;
+				horzWallHitY = nextHorzTouchY;
 
 				break;
 			}
 			else {
 				nextHorzTouchX += xstep;
 				nextHorzTouchY += ystep;
+			}
+		}
+
+		///////////////////////////////////////////
+		// VERTICAL RAY-GRID INTERSECTION CODE //
+		//////////////////////////////////////////
+		var foundVertWallHit = false;
+		var vertWallHitX = 0;
+		var vertWallHitY = 0;
+
+		// Find the x-coordinate of the closest vertical grid intersection
+		xintercept = Math.floor(player.x / TILE_SIZE) * TILE_SIZE;
+		xintercept += this.isRayFacingRight ? TILE_SIZE : 0;
+
+		// Find the y-coordinate of the closest vertical grid intersection
+		yintercept = player.y + (xintercept - player.x) * Math.tan(this.rayAngle);
+
+		// Calculate the increment xtep e and ystep
+		xstep = TILE_SIZE;
+		xstep *= this.isRayFacingLeft ? -1 : 1;
+
+		ystep = TILE_SIZE * Math.tan(this.rayAngle);
+		ystep *= (this.isRayFacingUp && ystep > 0) ? -1 : 1;
+		ystep *= (this.isRayFacingDown && ystep < 0) ? -1 : 1;
+
+		var nextVertTouchX = xintercept;
+		var nextVertTouchY = yintercept;
+
+		if (this.isRayFacingLeft)
+			nextVertTouchX--;
+
+		// Increment xtep and ystep until we find a wall
+		while (nextVertTouchX >= 0 && nextVertTouchX <= WINDOW_WIDTH
+			&& nextVertTouchY >= 0 && nextVertTouchY <= WINDOW_HEIGHT)
+		{
+			if (grid.hasWallAt(nextVertTouchX, nextVertTouchY)) {
+				foundVertWallHit = true;
+				vertWallHitX = nextVertTouchX;
+				vertWallHitY = nextVertTouchY;
+
+				break;
+			}
+			else {
+				nextVertTouchX += xstep;
+				nextVertTouchY += ystep;
 			}
 		}
 
@@ -237,6 +283,10 @@ function normalizeAngle(angle) {
 		angle = (2 * Math.PI) + angle;
 	}
 	return angle;
+}
+
+function distanceBetweenPoints(x1, y1, x2, y2) {
+	return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 }
 
 function setup() {
