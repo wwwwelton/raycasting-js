@@ -12,7 +12,7 @@ const WALL_STRIP_WIDTH = 1;
 // the numbers of rays decrease based on WALL_STRIP_WIDTH
 const NUM_RAYS = WINDOW_WIDTH / WALL_STRIP_WIDTH;
 
-const MINIMAP_SCALE_FACTOR = 0.2;
+const MINIMAP_SCALE_FACTOR = 1.0;
 
 class Map {
 	constructor() {
@@ -309,7 +309,7 @@ function render3DProjectedWalls() {
 	for (var i = 0; i < NUM_RAYS; i++) {
 		var ray = rays[i];
 
-		// fix fisheye effect
+		// get the perpendicular distance to the wall to fix fisheye distortion
 		var correctWallDistance = ray.distance * Math.cos(ray.rayAngle - player.rotationAngle);
 
 		// calculate the distance to the projection plane
@@ -318,7 +318,11 @@ function render3DProjectedWalls() {
 		// projected wall height
 		var wallStripeHeight = (TILE_SIZE / correctWallDistance) * distanceProjectionPlane;
 
-		fill("rgba(255, 255, 255, 1.0)");
+		// compute the transparency based on the wall distance
+		var alpha = 70 / correctWallDistance;
+
+		// render a rectangle with the calculated wall height
+		fill("rgba(255, 255, 255, " + alpha + ")");
 		noStroke();
 		rect(
 			// stripe width x, i is the ray index
