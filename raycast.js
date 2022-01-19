@@ -12,6 +12,8 @@ const WALL_STRIP_WIDTH = 1;
 // the numbers of rays decrease based on WALL_STRIP_WIDTH
 const NUM_RAYS = WINDOW_WIDTH / WALL_STRIP_WIDTH;
 
+const MINIMAP_SCALE_FACTOR = 0.2;
+
 class Map {
 	constructor() {
 		this.grid = [
@@ -48,7 +50,12 @@ class Map {
 				var tileColor = this.grid[i][j] == 1 ? "#222" : "#fff";
 				stroke("#222");
 				fill(tileColor);
-				rect(tileX, tileY, TILE_SIZE, TILE_SIZE);
+				rect(
+					MINIMAP_SCALE_FACTOR * tileX,
+					MINIMAP_SCALE_FACTOR * tileY,
+					MINIMAP_SCALE_FACTOR * TILE_SIZE,
+					MINIMAP_SCALE_FACTOR * TILE_SIZE
+				);
 			}
 		}
 	}
@@ -89,14 +96,18 @@ class Player {
 	render () {
 		// noStroke();
 		fill("red");
-		circle(this.x, this.y, this.radius);
-		// stroke("red");
-		// line(
-		// 	this.x,
-		// 	this.y,
-		// 	this.x + Math.cos(this.rotationAngle) * 20,
-		// 	this.y + Math.sin(this.rotationAngle) * 20
-		// );
+		circle(
+			MINIMAP_SCALE_FACTOR * this.x,
+			MINIMAP_SCALE_FACTOR * this.y,
+			MINIMAP_SCALE_FACTOR * this.radius
+		);
+		stroke("blue");
+		line(
+			MINIMAP_SCALE_FACTOR * this.x,
+			MINIMAP_SCALE_FACTOR * this.y,
+			MINIMAP_SCALE_FACTOR * (this.x + Math.cos(this.rotationAngle) * 30),
+			MINIMAP_SCALE_FACTOR * (this.y + Math.sin(this.rotationAngle) * 30)
+		);
 	}
 }
 
@@ -143,14 +154,15 @@ class Ray {
 		var nextHorzTouchX = xintercept;
 		var nextHorzTouchY = yintercept;
 
-		if (this.isRayFacingUp)
-			nextHorzTouchY--;
+		// removed because it was removing a pixel of the checkpoint
+		// if (this.isRayFacingUp)
+		// 	nextHorzTouchY--;
 
-		// Increment xtep and ystep until we find a wall
+		// Increment xstep and ystep until we find a wall
 		while (nextHorzTouchX >= 0 && nextHorzTouchX <= WINDOW_WIDTH
 			&& nextHorzTouchY >= 0 && nextHorzTouchY <= WINDOW_HEIGHT)
 		{
-			if (grid.hasWallAt(nextHorzTouchX, nextHorzTouchY)) {
+			if (grid.hasWallAt(nextHorzTouchX, nextHorzTouchY - (this.isRayFacingUp ? 1 : 0))) {
 				foundHorzWallHit = true;
 				horzWallHitX = nextHorzTouchX;
 				horzWallHitY = nextHorzTouchY;
@@ -164,7 +176,7 @@ class Ray {
 		}
 
 		///////////////////////////////////////////
-		// VERTICAL RAY-GRID INTERSECTION CODE //
+		// VERTICAL RAY-GRID INTERSECTION CODE  //
 		//////////////////////////////////////////
 		var foundVertWallHit = false;
 		var vertWallHitX = 0;
@@ -188,14 +200,15 @@ class Ray {
 		var nextVertTouchX = xintercept;
 		var nextVertTouchY = yintercept;
 
-		if (this.isRayFacingLeft)
-			nextVertTouchX--;
+		// removed because it was removing a pixel of the checkpoint
+		// if (this.isRayFacingLeft)
+		// 	nextVertTouchX--;
 
-		// Increment xtep and ystep until we find a wall
+		// Increment xstep and ystep until we find a wall
 		while (nextVertTouchX >= 0 && nextVertTouchX <= WINDOW_WIDTH
 			&& nextVertTouchY >= 0 && nextVertTouchY <= WINDOW_HEIGHT)
 		{
-			if (grid.hasWallAt(nextVertTouchX, nextVertTouchY)) {
+			if (grid.hasWallAt(nextVertTouchX - (this.isRayFacingLeft ? 1 : 0), nextVertTouchY)) {
 				foundVertWallHit = true;
 				vertWallHitX = nextVertTouchX;
 				vertWallHitY = nextVertTouchY;
@@ -226,10 +239,10 @@ class Ray {
 	render() {
 		stroke("rgba(255, 0, 0, 0.3)");
 		line(
-			player.x,
-			player.y,
-			this.wallHitX,
-			this.wallHitY,
+			MINIMAP_SCALE_FACTOR * player.x,
+			MINIMAP_SCALE_FACTOR * player.y,
+			MINIMAP_SCALE_FACTOR * this.wallHitX,
+			MINIMAP_SCALE_FACTOR * this.wallHitY,
 		);
 	}
 }
@@ -291,6 +304,35 @@ function castAllRays() {
 	}
 }
 
+function render3DProjectedWalls() {
+	// loop every ray in the array of rays
+	for (var i = 0; i < NUM_RAYS; i++) {
+		var ray = rays[i];
+
+		// fix fisheye effect
+		var correctWallDistance = ray.distance * Math.cos(ray.rayAngle - player.rotationAngle);
+
+		// calculate the distance to the projection plane
+		var distanceProjectionPlane = (WINDOW_WIDTH / 2) / Math.tan(FOV_ANGLE / 2);
+
+		// projected wall height
+		var wallStripeHeight = (TILE_SIZE / correctWallDistance) * distanceProjectionPlane;
+
+		fill("rgba(255, 255, 255, 1.0)");
+		noStroke();
+		rect(
+			// stripe width x, i is the ray index
+			i * WALL_STRIP_WIDTH,
+			// place the stripe in the middle of the screen
+			(WINDOW_HEIGHT / 2) - (wallStripeHeight / 2),
+			// stripe width x2, i is the ray index
+			WALL_STRIP_WIDTH,
+			// previously calculated height
+			wallStripeHeight
+		);
+	}
+}
+
 function normalizeAngle(angle) {
 	angle = angle % (2 * Math.PI);
 	if (angle < 0) {
@@ -314,7 +356,10 @@ function update() {
 }
 
 function draw() {
+	clear("#212121");
 	update();
+
+	render3DProjectedWalls();
 
 	grid.render();
 	for (ray of rays) {
