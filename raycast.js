@@ -125,7 +125,7 @@ class Ray {
 		this.isRayFacingRight = this.rayAngle < 0.5 * Math.PI || this.rayAngle > 1.5 * Math.PI;
 		this.isRayFacingLeft = !this.isRayFacingRight;
 	}
-	cast(columnId) {
+	cast() {
 		var xintercept, yintercept;
 		var xstep, ystep;
 
@@ -289,8 +289,6 @@ function keyReleased() {
 }
 
 function castAllRays() {
-	var columnId = 0;
-
 	// start first ray subtracting half of the FOV
 	// value of first ray slice
 	var rayAngle = player.rotationAngle - (FOV_ANGLE / 2);
@@ -298,16 +296,14 @@ function castAllRays() {
 	rays = [];
 
 	// loop all columns casting the rays
-	for (var i = 0; i < NUM_RAYS; i++) {
+	for (var col = 0; col < NUM_RAYS; col++) {
 		var ray = new Ray(rayAngle);
-		ray.cast(columnId);
+		ray.cast();
 		rays.push(ray);
 
 		// increment ray by slice width
 		// FOV_ANGLE / NUM_RAYS is the slice width
 		rayAngle += FOV_ANGLE / NUM_RAYS;
-
-		columnId++;
 	}
 }
 
@@ -326,10 +322,14 @@ function render3DProjectedWalls() {
 		var wallStripeHeight = (TILE_SIZE / correctWallDistance) * distanceProjectionPlane;
 
 		// compute the transparency based on the wall distance
-		var alpha = 70 / correctWallDistance;
+		// var alpha = 170 / correctWallDistance;
+		var alpha = 1.0;
+
+		// makes the color darker on the sides of the walls
+		var color = ray.wasHitVertical ? 255 : 180;
 
 		// render a rectangle with the calculated wall height
-		fill("rgba(255, 255, 255, " + alpha + ")");
+		fill("rgba(" + color + "," + color + "," + color + "," + alpha + ")");
 		noStroke();
 		rect(
 			// stripe width x, i is the ray index
