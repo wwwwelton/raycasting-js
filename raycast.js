@@ -12,7 +12,7 @@ const WALL_STRIP_WIDTH = 1;
 // the numbers of rays decrease based on WALL_STRIP_WIDTH
 const NUM_RAYS = WINDOW_WIDTH / WALL_STRIP_WIDTH;
 
-const MINIMAP_SCALE_FACTOR = 1.0;
+const MINIMAP_SCALE_FACTOR = 0.2;
 
 class Map {
 	constructor() {
@@ -231,10 +231,17 @@ class Ray {
 		: Number.MAX_VALUE;
 
 		// only stores the smallest of the distances
-		this.wallHitX = (horzHitDistance < vertHitDistance) ? horzWallHitX : vertWallHitX;
-		this.wallHitY = (horzHitDistance < vertHitDistance) ? horzWallHitY : vertWallHitY;
-		this.distance = (horzHitDistance < vertHitDistance) ? horzHitDistance : vertHitDistance;
-		this.wasHitVertical = (vertHitDistance < horzHitDistance);
+		if (vertHitDistance < horzHitDistance) {
+			this.wallHitX = vertWallHitX;
+			this.wallHitY = vertWallHitY;
+			this.distance = vertHitDistance;
+			this.wasHitVertical = true;
+		} else {
+			this.wallHitX = horzWallHitX;
+			this.wallHitY = horzWallHitY;
+			this.distance = horzHitDistance;
+			this.wasHitVertical = false;
+		}
 	}
 	render() {
 		stroke("rgba(255, 0, 0, 0.3)");
